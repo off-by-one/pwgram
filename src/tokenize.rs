@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use unicode_segmentation::{GraphemeIndices, UnicodeSegmentation};
 
 pub(crate) struct PwTokens<'a> {
     source: &'a str,
@@ -11,27 +12,33 @@ impl<'a> PwTokens<'a> {
     }
 
     pub(crate) fn iter(&'a self) -> PwTokenIter<'a> {
-        PwTokenIter { pt: self, idx: 0 }
+        PwTokenIter {
+            pt: self,
+            idxs: self.source.grapheme_indices(true),
+        }
     }
 }
 
 pub(crate) struct PwTokenIter<'a> {
     pt: &'a PwTokens<'a>,
-    idx: usize,
+    idxs: GraphemeIndices<'a>,
 }
 
 impl<'a> Iterator for PwTokenIter<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let (idx, grph) = self.idxs.next()?;
         for token in &self.pt.ntokens {
-            if (self.pt.source[self.idx..]).starts_with(token.as_str()) {
-                self.idx += token.len();
+            if (self.pt.source[idx..]).starts_with(token.as_str()) {
+                let mut len = grph.len();
+                while len < token.len() {
+                    len += self.idxs.next()?.1.len();
+                }
                 return Some(token.as_str());
             }
         }
-        self.idx += 1;
-        self.pt.source.get((self.idx - 1)..self.idx)
+        self.pt.source.get(idx..(idx + grph.len()))
     }
 }
 

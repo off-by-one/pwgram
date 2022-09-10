@@ -16,7 +16,7 @@ This tool uses an extremely simple [[https://en.wikipedia.org/wiki/Bigram][bigra
 
 Also, given some experiments with a 10,000k word dictionary
 
-- creates more pronounceable characters based on a few thousand training words
+- creates more pronounceable passwords based on a few thousand training words
 - has higher entropy of around 3.9 bits per character
 
 * How
@@ -33,10 +33,8 @@ Finally, don't overdo it. Please use a password manager. The goal here is to mak
 
 * Limitations
 
-The entropy estimator effectively counts the entropy of N tokens, given all possible ways this model could generate N tokens. Since some tokens are multiple characters, this is an underestimate, since the true value would be how many ways there are to generate M characters, where M >= N. However, it has experimentally been pretty close to the entropy estimated via compession ratio, so it's probably good enough.
+The entropy estimator effectively counts the entropy of N tokens, given all possible ways this model could generate N tokens. Since some tokens are multiple characters, this is an underestimate, since the true entropy would be how many ways there are to generate M characters, where M >= N. However, it has experimentally been pretty close to the entropy estimated via compession ratio, so it's probably good enough.
 
-Multigraphs are an annoying sticking point. A trigram (or more generally n gram) model would do better, but they take more training data to achieve the same entropy per character.
-
-Diacritics are also an issue - if they are a separate code point, they will be treated as their own character, which will mean the model is trained on whatever follows diacritics rather than what the diacritic is modifying. This will be fixed in the next minor version to use grapheme clusters.
+Multigraphs are an annoying sticking point. A trigram (or more generally n gram) model would do better, but they take more training data to achieve the same entropy per character. The current plan in the next major version is to provide a training helper - it will help the user identify multigraph tokens if they choose to pretrain a model.
 
 Also, I am still learning rust, and made a lot of iffy choices partly to learn how the feature works. The bigram and tokenize internals will probably change a lot if I ever get around to it.
