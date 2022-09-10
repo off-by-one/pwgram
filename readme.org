@@ -1,0 +1,42 @@
+#+title: pwgram
+
+* Why
+
+The standard tool [[https://linux.die.net/man/1/pwgen][pwgen]] can create pronounceable passwords using the ~-A0~ flags. These make it easy to type and remember high entropy passwords which are shorter than a passphrase. However, they are not of the highest quality.
+
+- estimating entropy based on compression shows around 3.4 bits per character
+- there is no entropy estimate based on generation method
+- 'ealeizee' is not actually very pronounceable
+- it only supports English phonetics
+
+This tool uses an extremely simple [[https://en.wikipedia.org/wiki/Bigram][bigram model]] to generate passwords.
+
+- since they are a subset of Markov chains, we can give a standard entropy estimate
+- supports more character sets, though long multigraphs are problematic
+
+Also, given some experiments with a 10,000k word dictionary
+
+- creates more pronounceable characters based on a few thousand training words
+- has higher entropy of around 3.9 bits per character
+
+* How
+
+Find a word list. [[https://github.com/first20hours/google-10000-english][This repo]] has a few 10k English word lists. Word list should be formatted as one word per line. I prefer all lowercase characters, but capitalized characters will be counted as distinct tokens and used appropraitely (e.g. if only first chars are capitalized, the start of each 'word' boundary will be capitalized, which probably means the first letter of your password will sometimes be capitalized).
+
+Run pwgram with ~<tool> --data <dictionary/file/path>~. ~<tool>~ is either the name of the binary or ~cargo run --~, if running directly from the cargo root.
+
+If you end up with a lot of truncated multigraphs (e.g. ch, then something that makes sense after h but not ch), include them using the ~--tokens~ flag, as a comma-separated list. A decent list for English is sh,ph,th,ch. This may change to a separate file in later versions.
+
+Set your entropy at the desired level. NIST sets the minimum at around 40. There's no strong reason to go above 100 - that is sufficient for a long-term encryption key, even with a somewhat weak KDF.
+
+Finally, don't overdo it. Please use a password manager. The goal here is to make things easier, so this should either be used to make passwords that you have to type on machines where the password manager is not installed or not available, or to make the password to your password manager. There's no good reason to have more than one or two memorized at any time.
+
+* Limitations
+
+The entropy estimator effectively counts the entropy of N tokens, given all possible ways this model could generate N tokens. Since some tokens are multiple characters, this is an underestimate, since the true value would be how many ways there are to generate M characters, where M >= N. However, it has experimentally been pretty close to the entropy estimated via compession ratio, so it's probably good enough.
+
+Multigraphs are an annoying sticking point. A trigram (or more generally n gram) model would do better, but they take more training data to achieve the same entropy per character.
+
+Diacritics are also an issue - if they are a separate code point, they will be treated as their own character, which will mean the model is trained on whatever follows diacritics rather than what the diacritic is modifying. This will be fixed in the next minor version to use grapheme clusters.
+
+Also, I am still learning rust, and made a lot of iffy choices partly to learn how the feature works. The bigram and tokenize internals will probably change a lot if I ever get around to it.
