@@ -10,3 +10,6 @@ clap = { version = "3.2.20", features = ["derive"] }
 ngrams = "*"
 rand = "*"
 unicode-segmentation = "*"
+
+[profile.release]
+debug = true

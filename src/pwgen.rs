@@ -33,8 +33,8 @@ impl<'a, T: Clone> Iterator for StateTransitionIter<'a, T> {
 }
 
 struct BigramEntropyEstimator<'a> {
-    model: &'a BigramModelMap,
-    states: BTreeMap<u8, BigramState>,
+    model: &'a BigramModelMap<'a>,
+    states: BTreeMap<u8, BigramState<'a>>,
 }
 
 impl<'a> BigramEntropyEstimator<'a> {
@@ -81,7 +81,7 @@ impl<'a> Iterator for BigramEntropyEstimator<'a> {
 }
 
 struct BigramPwgenerator<'a> {
-    model: &'a BigramModelMap,
+    model: &'a BigramModelMap<'a>,
     iterator: BigramGeneratorIter<'a>,
 }
 
@@ -95,7 +95,7 @@ impl<'a> BigramPwgenerator<'a> {
 }
 
 impl<'a> Iterator for BigramPwgenerator<'a> {
-    type Item = BigramToken;
+    type Item = BigramToken<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iterator.next().or_else(|| {

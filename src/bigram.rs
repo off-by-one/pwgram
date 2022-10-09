@@ -1,21 +1,19 @@
 use ngrams::Ngram;
 use rand::thread_rng;
 use rand::Rng;
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::ops::Not;
 
-pub(crate) type BigramToken = Cow<'static, String>;
+pub(crate) type BigramToken<'a> = &'a str;
 
 /// Current state of a bigram model - either a token, or None at the start of
 /// generation.
-pub(crate) type BigramState = Option<BigramToken>;
+pub(crate) type BigramState<'a> = Option<BigramToken<'a>>;
 
 /// A single bigram transition
-pub(crate) type BigramTransitionMap = BTreeMap<u8, BigramToken>;
-pub(crate) type BigramModelMap = HashMap<BigramState, BigramTransitionMap>;
+pub(crate) type BigramTransitionMap<'a> = BTreeMap<u8, BigramToken<'a>>;
+pub(crate) type BigramModelMap<'a> = HashMap<BigramState<'a>, BigramTransitionMap<'a>>;
 
 pub(crate) trait BigramTransition<T, U> {
     fn rand(&self) -> U;
@@ -52,12 +50,12 @@ impl<T: Clone> BigramTransition<u8, T> for BTreeMap<u8, T> {
 }
 
 pub struct BigramGeneratorIter<'a> {
-    model: &'a BigramModelMap,
-    state: BigramState,
+    model: &'a BigramModelMap<'a>,
+    state: BigramState<'a>,
 }
 
 impl<'a> Iterator for BigramGeneratorIter<'a> {
-    type Item = BigramToken;
+    type Item = BigramToken<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.state = Some(self.model.get(&self.state)?.rand());
@@ -65,7 +63,7 @@ impl<'a> Iterator for BigramGeneratorIter<'a> {
     }
 }
 
-impl BigramModel for HashMap<BigramState, BigramTransitionMap> {
+impl<'a> BigramModel for HashMap<BigramState<'a>, BigramTransitionMap<'a>> {
     fn gen_iter(&self) -> BigramGeneratorIter {
         BigramGeneratorIter {
             model: self,
@@ -77,25 +75,15 @@ impl BigramModel for HashMap<BigramState, BigramTransitionMap> {
 pub(crate) fn train<'a>(
     corpus: impl Iterator<Item = &'a str>,
     delims: &HashSet<&str>,
-) -> BigramModelMap {
+) -> BigramModelMap<'a> {
     let mut bigrams = corpus.ngrams(2).peekable();
 
-    let mut tokens = HashMap::<&str, BigramToken>::new();
-    let mut transitions = HashMap::<BigramState, HashMap<BigramToken, u64>>::new();
+    let mut transitions: HashMap<BigramState, HashMap<BigramToken, u64>> = HashMap::new();
 
     if let Some(bigram) = bigrams.peek() {
         let fst = bigram[0];
 
-        let fst = tokens
-            .entry(fst)
-            .or_insert_with_key(|s| Cow::Owned(s.to_string()))
-            .clone();
-
-        *transitions
-            .entry(None)
-            .or_default()
-            .entry(fst.clone())
-            .or_default() += 1;
+        *transitions.entry(None).or_default().entry(fst).or_default() += 1;
     }
 
     for bigram in bigrams {
@@ -105,20 +93,8 @@ pub(crate) fn train<'a>(
             continue;
         }
 
-        let curr = delims.contains(curr).not().then(|| {
-            tokens
-                .entry(curr)
-                .or_insert_with_key(|s| Cow::Owned(s.to_string()))
-                .clone()
-        });
-
-        let next = tokens
-            .entry(next)
-            .or_insert_with_key(|s| Cow::Owned(s.to_string()))
-            .clone();
-
         *transitions
-            .entry(curr)
+            .entry(Some(curr))
             .or_default()
             .entry(next)
             .or_default() += 1

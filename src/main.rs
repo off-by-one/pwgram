@@ -11,7 +11,7 @@ mod pwgen;
 mod tokenize;
 
 #[derive(Parser)]
-#[clap(author = "Vlad (off-by-one@github)", version = "v1.0.1", about, long_about = None)]
+#[clap(author = "Vlad (off-by-one@github)", version = "v1.0.2", about, long_about = None)]
 struct Cli {
     /// File containing training data for the bigram model.
     #[clap(short, long, value_parser)]
