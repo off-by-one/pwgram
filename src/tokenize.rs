@@ -1,17 +1,21 @@
+/// Tokenize the input corpus.
+///
+/// Tokens come in minimal units of graphemes, under the assumption that
+/// (diacritic -> character) is not a meaningful transition in most scripts.
 use std::collections::HashSet;
 use unicode_segmentation::{GraphemeIndices, UnicodeSegmentation};
 
-pub(crate) struct PwTokens<'a> {
+pub struct PwTokens<'a> {
     source: &'a str,
     ntokens: HashSet<String>,
 }
 
 impl<'a> PwTokens<'a> {
-    pub(crate) fn new(source: &'a str, ntokens: HashSet<String>) -> Self {
+    pub fn new(source: &'a str, ntokens: HashSet<String>) -> Self {
         PwTokens { source, ntokens }
     }
 
-    pub(crate) fn iter(&'a self) -> PwTokenIter<'a> {
+    pub fn iter(&'a self) -> PwTokenIter<'a> {
         PwTokenIter {
             pt: self,
             idxs: self.source.grapheme_indices(true),
@@ -19,7 +23,7 @@ impl<'a> PwTokens<'a> {
     }
 }
 
-pub(crate) struct PwTokenIter<'a> {
+pub struct PwTokenIter<'a> {
     pt: &'a PwTokens<'a>,
     idxs: GraphemeIndices<'a>,
 }

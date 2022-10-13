@@ -11,7 +11,7 @@ The standard tool [[https://linux.die.net/man/1/pwgen][pwgen]] can create pronou
 
 This tool uses an extremely simple [[https://en.wikipedia.org/wiki/Bigram][bigram model]] to generate passwords.
 
-- since they are a subset of Markov chains, we can give a standard entropy estimate
+- being Markov chains, we can give a standard entropy estimate using a state ensemble
 - supports more character sets, though long multigraphs are problematic
 
 Also, given some experiments with a 10,000k word dictionary
@@ -23,9 +23,11 @@ Also, given some experiments with a 10,000k word dictionary
 
 Find a word list. [[https://github.com/first20hours/google-10000-english][This repo]] has a few 10k English word lists. Word list should be formatted as one word per line. I prefer all lowercase characters, but capitalized characters will be counted as distinct tokens and used appropraitely (e.g. if only first chars are capitalized, the start of each 'word' boundary will be capitalized, which probably means the first letter of your password will sometimes be capitalized).
 
-Run pwgram with ~<tool> --data <dictionary/file/path>~. ~<tool>~ is either the name of the binary or ~cargo run --~, if running directly from the cargo root.
+Train the model using ~pwgram-train <wordlist>~, or piping the wordlist into stdin. The model is printed to stdout.
 
 If you end up with a lot of truncated multigraphs (e.g. ch, then something that makes sense after h but not ch), include them using the ~--tokens~ flag, as a comma-separated list. A decent list for English is sh,ph,th,ch. This may change to a separate file in later versions.
+
+Then generate the password using ~pwgram <model>~, or by piping the model in stdin.
 
 Set your entropy at the desired level. NIST sets the minimum at around 40. There's no strong reason to go above 100 - that is sufficient for a long-term encryption key, even with a somewhat weak KDF.
 
